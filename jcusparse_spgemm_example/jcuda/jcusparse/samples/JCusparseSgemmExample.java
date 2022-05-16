@@ -21,6 +21,10 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
+import jcuda.jcusparse.*;
+import static jcuda.jcusparse.JCusparse.*;
+import static jcuda.jcusparse.cusparseSpMMAlg.CUSPARSE_MM_ALG_DEFAULT;
+
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.jcusparse.JCusparse;
@@ -138,7 +142,15 @@ public class JCusparseSgemmExample
 
         Pointer pAlpha = Pointer.to(new float[] { alpha });
         Pointer pBeta = Pointer.to(new float[] { beta });
-        
+
+        // testing invocation of cusparseSpMM_bufferSize (this has nothing to do with the spgemm example in this file)
+        long aBufferSizeSPMM[] = { 0 };
+        cusparseDnMatDescr dense_descr = new cusparseDnMatDescr();
+        JCusparse.cusparseCreateDnMat(dense_descr, B_num_rows, B_num_cols, B_num_rows, dB_values, CUDA_R_32F, cusparseOrder.CUSPARSE_ORDER_ROW);
+
+        cusparseSpMM_bufferSize(handle, opA, opB, pAlpha, matA, dense_descr, pBeta, dense_descr, computeType, CUSPARSE_MM_ALG_DEFAULT, aBufferSizeSPMM);
+        System.out.println("cusparseSpMM_bufferSize output=" + aBufferSizeSPMM);
+
         // ask bufferSize1 bytes for external memory
         cusparseSpGEMM_workEstimation(handle, opA, opB,
             pAlpha, matA, matB, pBeta, matC,
